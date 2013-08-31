@@ -1,9 +1,10 @@
-#!/usr/bin/env python
+import sys
+sys.path.append('../')
+
 from scipy.integrate.ode import *
-from ode import dirField, Euler
+from src.ode import dirField, Euler
 from numpy import arange,vstack,array, sqrt
 from pylab import *
-import sys
 
 def func(t, y, *fparams):
   """

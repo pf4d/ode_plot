@@ -1,8 +1,9 @@
-#!/usr/bin/env python
-from scipy.integrate.ode import *
-from ode import dirField_2, Euler
-from pylab import *
 import sys
+sys.path.append('../')
+
+from scipy.integrate.ode import *
+from src.ode import dirField_2, Euler
+from pylab import *
 
 def f1(x1, x2, *fparams):
   """
