@@ -41,7 +41,7 @@ if Euler.runner:
     IntegratorBase.integrator_classes.append(Euler)
 
 
-def dirField_2(f1, f2, f1_params, f2_params, ax):
+def dirField_2(f1, f2, ax, f1_params=None, f2_params=None):
   """
   Plot the direction field of dx2/dx1 = f2/f1 on an axes object ax.
   """

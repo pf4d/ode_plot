@@ -105,7 +105,7 @@ ax2.set_xlim([xmin, xmax])
 ax2.set_ylim([ymin, ymax])
 
 # plot the direction field for the problem
-dirField_2(dudt, dvdt, (alpha,beta), (gamma, delta), ax2)
+dirField_2(dudt, dvdt, ax2, (alpha,beta), (gamma, delta))
 ax2.plot(sol[0], sol[1])
 
 ax2.set_title(r'$(u,v)$ phase plane')

@@ -1,9 +1,8 @@
 import sys
 sys.path.append('../')
 
-from scipy.integrate.ode import *
+from scipy.integrate._ode import *
 from src.ode import dirField, Euler
-from numpy import arange,vstack,array, sqrt
 from pylab import *
 
 def func(t, y, *fparams):
