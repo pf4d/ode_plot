@@ -1,5 +1,5 @@
 from pylab import *
-from scipy.integrate.ode import IntegratorBase
+from scipy.integrate._ode import IntegratorBase
 from numpy import array, isfinite
 
 mpl.rcParams['font.family'] = 'serif'
@@ -41,7 +41,7 @@ if Euler.runner:
     IntegratorBase.integrator_classes.append(Euler)
 
 
-def dirField_2(f1, f2, ax):
+def dirField_2(f1, f2, f1_params, f2_params, ax):
   """
   Plot the direction field of dx2/dx1 = f2/f1 on an axes object ax.
   """
@@ -65,8 +65,8 @@ def dirField_2(f1, f2, ax):
   
   #=============================================================================
   # differential function :
-  f1  = f1(x, y)
-  f2  = f2(x, y)
+  f1  = f1(x, y, f1_params)
+  f2  = f2(x, y, f2_params)
   f   = f2/f1
 
   v  = sqrt((r**2) / (1 + 1/f**2))        # length of arrow in y-dir
