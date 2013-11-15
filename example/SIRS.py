@@ -4,6 +4,7 @@ sys.path.append('../')
 from scipy.integrate._ode import ode
 from src.ode import dirField, dirField_2, Euler
 from pylab import *
+from mpl_toolkits.mplot3d import Axes3D
 
 #---------------------------------------------------------------------
 # ODE function to be integrated
@@ -75,8 +76,8 @@ def f(t, y, dSdt, dIdt, dRdt, S_params, I_params, R_params):
    
 
 # Initial conditions
-y0 = [490.0, 10.0, 0.0]   # no recovered or immunized
-#y0 = [290.0, 10.0, 200.0]  # 200 recovered or immunized
+#y0 = [490.0, 10.0, 0.0]   # no recovered or immunized
+y0 = [290.0, 10.0, 200.0]  # 200 recovered or immunized
       
 # Additional parameters being passed to the ODE function
 N       = 500.0
@@ -109,7 +110,7 @@ sol = array(sol).T
 
 #Plot the solution:
 fig = figure(figsize=(12,5))
-ax1 = fig.add_subplot(121) 
+ax1 = fig.add_subplot(121)
 ax1.plot(ta, sol[0], '-', lw=2.0, label=r'$S$')
 ax1.plot(ta, sol[1], '-', lw=2.0, label=r'$I$')
 ax1.plot(ta, sol[2], '-', lw=2.0, label=r'$R$')
@@ -117,21 +118,50 @@ ax1.plot(ta, sol[2], '-', lw=2.0, label=r'$R$')
 ax1.set_xlabel(r'$S,I$')
 ax1.set_ylabel(r'$f(S),f(I)$')
 ax1.set_title('Solution')
-leg = ax1.legend(loc='right center')
+leg = ax1.legend(loc='upper right')
 leg.get_frame().set_alpha(0.5)
 ax1.grid()
 
 
 # Plot the results
 ax2 = fig.add_subplot(122)
-xmin = sol[0].min() 
-xmax = sol[0].max() 
-ymin = sol[1].min() 
-ymax = sol[1].max() 
+xmin = sol[0].min()
+xmax = sol[0].max()
+ymin = sol[1].min()
+ymax = sol[1].max()
+zmin = sol[2].min()
+zmax = sol[2].max()
 ax2.set_xlim([xmin, xmax])
 ax2.set_ylim([ymin, ymax])
 
 # plot the direction field for the problem
+def dSdt(S, I, params):
+  """
+  INPUT:
+    S - population of susceptible
+    I - population of infected.
+  OUTPUT:
+    dS/dt - time derivative of susceptible as a function of S and I.
+  """
+  N = 500
+  alpha = params[0]
+  gamma = params[1]
+  dSdt  = -alpha*I*S + gamma*(N - S - I)
+  return array(dSdt)
+
+def dIdt(S, I, params):
+  """
+  INPUT:
+    S - population of susceptible
+    I - population of infected.
+  OUTPUT:
+    dI/dt - time derivative of infected as a function of S and I.
+  """
+  alpha = params[0]
+  beta  = params[1]
+  dIdt  = alpha*I*S - beta*I
+  return array(dIdt)
+
 dirField_2(dSdt, dIdt, ax2, S_params, I_params)
 ax2.plot(sol[0], sol[1])
 
@@ -139,6 +169,7 @@ ax2.set_title(r'$(S,I)$ phase plane')
 ax2.set_xlabel(r'$S$')
 ax2.set_ylabel(r'$I$')
 tight_layout()
+savefig('prb4b.png', dpi=300)
 show()
 
 
