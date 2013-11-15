@@ -102,6 +102,50 @@ def dirField_2(f1, f2, ax, f1_params=None, f2_params=None):
   ylim([ymin, ymax])                      # plotting y-axis limits
   xlim([xmin, xmax])                      # plotting x-axis limits
 
+def dirField_3(f1, f2, f3, ax, f1_params=None, f2_params=None, f3_params=None):
+  """
+  Plot the direction field of dx2/dx1 = f2/f1 on an axes object ax.
+  """
+  xmin = ax.get_xlim()[0]
+  xmax = ax.get_xlim()[1]
+  ymin = ax.get_ylim()[0]
+  ymax = ax.get_ylim()[1]
+
+  xstep  = (xmax - xmin)/30.
+  ystep  = (ymax - ymin)/30.
+  
+  # coordinate initialization :
+  x1     = arange(xmin, xmax, xstep)
+  x2     = arange(xmin, xmax, xstep/4)    # higher-res. plot x coord.
+  y1     = arange(ymin, ymax, ystep)
+  y2     = arange(ymin, ymax, ystep/4)
+  coord  = meshgrid(x1, y1)
+  x      = coord[0]
+  y      = coord[1]
+  r      = 0.5                            # length of arrows - irrelevant
+  
+  #=============================================================================
+  # differential function :
+  f1  = f1(x, y, f1_params)
+  f2  = f2(x, y, f2_params)
+  f   = f2/f1
+
+  v  = sqrt((r**2) / (1 + 1/f**2))        # length of arrow in y-dir
+  u  = v/f                                # length of arrow in x-dir
+  
+  #=============================================================================
+  # plotting :
+  gray = '#5f5f5f'                           # color for axes
+  ax.axhline(lw=1, c=gray)                   # x-axis
+  ax.axvline(lw=1, c=gray)                   # y-axis
+  ax.quiver(x, y, u, v, pivot='middle',
+                        scale=None,
+                        angles='xy',
+                        headwidth=0.0, 
+                        headlength=0.0, 
+                        headaxislength=0.0)  # plot the dir. field
+  ylim([ymin, ymax])                      # plotting y-axis limits
+  xlim([xmin, xmax])                      # plotting x-axis limits
 
 def dirField(f, ax):
   """
