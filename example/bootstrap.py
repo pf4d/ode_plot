@@ -7,6 +7,7 @@ from pylab                import *
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.io             import loadmat
 from scipy.optimize       import fmin
+from numpy.random         import choice
 
 #---------------------------------------------------------------------
 # ODE function to be integrated :
@@ -16,14 +17,16 @@ def f(t, y, p):
   ydot   = theta1*exp(-theta1*t) - theta2*y
   return ydot
 
-def integrate(params, f, ta, u, u0, dt):
+def integrate(params, f, ta, u, dt):
   t0 = ta[0]
-  
+  u0 = params[0]
+  p0 = params[1:]
+    
   # Call function that integrates the ODE:
   r = ode(f)
   r.set_integrator('dopri5', atol=1e-8, rtol=1e-5)
   r.set_initial_value(u0, t0)
-  r.set_f_params(params)
+  r.set_f_params(p0)
   
   sol = []
   sol.append(u0)
@@ -34,42 +37,76 @@ def integrate(params, f, ta, u, u0, dt):
   return sol
 
 # function to be optimized :
-def bootOptimize(params, f, ta, u, u0):
+def bootOptimize(params, f, ta, u):
   """
   FUNCTION BOOTOPTIMIZE: This function calls an ODE solver to fit a 
     specific ODE function "odemodel" to a set of data given by (ydat,
     xdat).
   """
   dt  = ta[1] - ta[0]
-  sol = integrate(params, f, ta, u, u0, dt)
+  sol = integrate(params, f, ta, u, dt)
   
   # Sum of Square Errors :
   SSE = sum((u - sol)**2)
   return SSE 
 
 # non-linear model bootstrap :
-def bootNLM(t, u, u0, p0, f, B, dt):
+def bootNLM(t, u, params, f, B, dtmin):
+  """
+  FUNCTION BOOTNLM: This function reads in the data (x,y), the parameter 
+    starting values (generally the parameter estimates), and the number 
+    of bootstrap samples desired (B).  It returns the bootstrap estimates 
+    of the parameters in a B x p vector (bootest) and the Delta method 
+    standard errors (sedelta).
+  """
   n   = len(t)
   np  = len(p0)
-  t0  = t[0]                         # Starting time for simulation
-  tf  = t[-1]                        # Time to end the simulation
-  ta  = arange(t0, tf+dt, dt)        # Time span
-  
-  yhat = integrate(p0, f, ta, u, u0, dt)
+  dt  = t[1] - t[0]
+  u0  = params[0]
+  p0  = params[1:]
+
+  uhat = integrate(p0, f, ta, u, dt)
   
   Ax_min = array([])
-  ys     = array([])
+  us     = array([])
   Fhat   = array([])
   for i in range(np):
-    Ax_min      = append(Ax_min, p0)
-    Ax_min[i,i] = Ax_min[i,i] + dt
-    p0_new      = Axmin[i,:]
-    yhat_new    = integrate(p0_new, f, ta, u, u0, dt)
+    Ax_min      = append(Ax_min, params)
+    Ax_min[i,i] = Ax_min[i,i] + dtmin
+    p0_new      = Ax_min[i,:]
+    uhat_new    = integrate(p0_new, f, t, u, dt)
     
-    ys   = append(ys, yhat_new)
-    Jhat = (yhat_new - yhat) / dt
-    Fhat = append(Fhat, Jhat) 
+    us   = append(us, uhat_new)
+    Jhat = (uhat_new - uhat) / dtmin
+    Fhat = append(Fhat, Jhat)
 
+  Fhat = Fhat.T
+  us   = us.T
+  
+  resid  = u - uhat
+  MSE    = sum(resid**2) / (n-np)
+  FTF    = dot(Fhat.T, Fhat)
+  varMat = inv(FTF * MSE)
+  sedelt = sqrt(diag(varMat))
+
+  leverage = diag(dot(Fhat, dot(inv(FTF), Fhat.T)))
+  uhatmat  = dot(ones(B,1), yhat)
+
+  modres   = resid / sqrt(1 - leverage)
+  modres  -= mean(modres)
+  residmat = choice(modres, B*n, replace=True)
+  residmat = reshape(residmat, (B,n))
+
+  bsamp    = uhatmat + residmat
+  
+  for i in range(B):
+    btdat = t
+    budat = bsamp[i,:]
+
+    ftn = lambda p: bootOptimize(p, f, btdat, budat, u0) 
+    bootest[i,np] = fmin()
+
+  
 
 
 
@@ -79,8 +116,7 @@ t    = data['blood'][0][0][0].T[0]
 u    = data['blood'][0][0][1].T[0]
 
 # Initial conditions
-p0 = [1, 1]
-u0 = 0.0
+p0 = [0, 1, 1]
 
 
 # ================================================================ #
@@ -88,7 +124,7 @@ u0 = 0.0
 # function "bootoptimize" (usually least squares), starting values #
 # "startvals" and data in "y,x" to fit the data to the model       #
 # ================================================================ #
-ftn  = lambda p: bootOptimize(p, f, t, u, u0)
+ftn  = lambda p: bootOptimize(p, f, t, u)
 
 phat = fmin(func=ftn, x0=p0)
 
