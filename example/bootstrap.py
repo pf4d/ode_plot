@@ -17,11 +17,11 @@ def f(t, y, p):
   ydot   = theta1*exp(-theta1*t) - theta2*y
   return ydot
 
-def integrate(params, f, ta, u, dt):
+def integrate(params, f, ta, dt):
   t0 = ta[0]
   u0 = params[0]
   p0 = params[1:]
-    
+  
   # Call function that integrates the ODE:
   r = ode(f)
   r.set_integrator('dopri5', atol=1e-8, rtol=1e-5)
@@ -37,21 +37,27 @@ def integrate(params, f, ta, u, dt):
   return sol
 
 # function to be optimized :
-def bootOptimize(params, f, ta, u):
+def bootOptimize(params, f, t, u, dt):
   """
   FUNCTION BOOTOPTIMIZE: This function calls an ODE solver to fit a 
     specific ODE function "odemodel" to a set of data given by (ydat,
     xdat).
   """
-  dt  = ta[1] - ta[0]
-  sol = integrate(params, f, ta, u, dt)
+  t0  = t[0]
+  tf  = t[-1]
+  ta  = arange(t0, tf+dt, dt)
+  sol = integrate(params, f, ta, dt)
   
+  t_indx = []
+  for ti in t:
+    t_indx.append(where(ta == ti)[0][0])
+
   # Sum of Square Errors :
-  SSE = sum((u - sol)**2)
+  SSE = sum((u - sol[t_indx])**2)
   return SSE 
 
 # non-linear model bootstrap :
-def bootNLM(t, u, params, f, B, dtmin):
+def bootNLM(t, u, params, f, B, dt):
   """
   FUNCTION BOOTNLM: This function reads in the data (x,y), the parameter 
     starting values (generally the parameter estimates), and the number 
@@ -60,25 +66,27 @@ def bootNLM(t, u, params, f, B, dtmin):
     standard errors (sedelta).
   """
   n   = len(t)
-  np  = len(p0)
-  dt  = t[1] - t[0]
+  np  = len(params)
   u0  = params[0]
   p0  = params[1:]
+  print u0, p0
 
-  uhat = integrate(p0, f, ta, u, dt)
+  uhat = integrate(params, f, t, dt)
   
-  Ax_min = array([])
+  Ax_min = tile(params, (np, 1))
   us     = array([])
   Fhat   = array([])
   for i in range(np):
-    Ax_min      = append(Ax_min, params)
-    Ax_min[i,i] = Ax_min[i,i] + dtmin
+    Ax_min[i,i] = Ax_min[i,i] + dt
     p0_new      = Ax_min[i,:]
-    uhat_new    = integrate(p0_new, f, t, u, dt)
-    
-    us   = append(us, uhat_new)
-    Jhat = (uhat_new - uhat) / dtmin
-    Fhat = append(Fhat, Jhat)
+    uhat_new    = integrate(p0_new, f, t, dt)
+    Jhat        = (uhat_new - uhat) / dt
+    if i == 0:
+      us   = uhat_new
+      Fhat = Jhat
+    else:
+      us   = vstack((us, uhat_new))
+      Fhat = vstack((Fhat, Jhat))
 
   Fhat = Fhat.T
   us   = us.T
@@ -90,7 +98,7 @@ def bootNLM(t, u, params, f, B, dtmin):
   sedelt = sqrt(diag(varMat))
 
   leverage = diag(dot(Fhat, dot(inv(FTF), Fhat.T)))
-  uhatmat  = dot(ones(B,1), yhat)
+  uhatmat  = tensordot(ones(B), uhat, 0)
 
   modres   = resid / sqrt(1 - leverage)
   modres  -= mean(modres)
@@ -98,14 +106,17 @@ def bootNLM(t, u, params, f, B, dtmin):
   residmat = reshape(residmat, (B,n))
 
   bsamp    = uhatmat + residmat
-  
+  bootest  = array([]) 
   for i in range(B):
     btdat = t
     budat = bsamp[i,:]
 
-    ftn = lambda p: bootOptimize(p, f, btdat, budat, u0) 
-    bootest[i,np] = fmin()
-
+    ftn = lambda p: bootOptimize(p, f, btdat, budat, dt) 
+    bootnew = fmin(func=ftn, x0=params)
+    bootest = append(bootest, bootnew)
+    print 'Bootstrap iteration %i' % i
+  
+  return bootest, sedelt
   
 
 
@@ -115,8 +126,16 @@ data = loadmat('data/blood.mat')
 t    = data['blood'][0][0][0].T[0]
 u    = data['blood'][0][0][1].T[0]
 
-# Initial conditions
+# initial conditions :
 p0 = [0, 1, 1]
+
+# time parameters :
+t0  = t[0]
+tf  = t[-1]
+dt  = 0.25
+pdt = 0.001
+ta  = arange(t0, tf, pdt)
+B   = 2
 
 
 # ================================================================ #
@@ -124,12 +143,19 @@ p0 = [0, 1, 1]
 # function "bootoptimize" (usually least squares), starting values #
 # "startvals" and data in "y,x" to fit the data to the model       #
 # ================================================================ #
-ftn  = lambda p: bootOptimize(p, f, t, u)
-
+ftn  = lambda p: bootOptimize(p, f, t, u, dt)
 phat = fmin(func=ftn, x0=p0)
+uhat = integrate(phat, f, ta, pdt)
 
-dt = 0.0001
+betaBoot, seDelta = bootNLM(t, u, phat, f, B, dt)
 
+fig = figure()
+plot(t,  u, 'ro')
+plot(ta, uhat, 'k-', lw=2.0)
+grid()
+xlabel(r'$t$')
+ylabel(r'concentration')
+show()
 
 ##Plot the solution:
 #fig = figure(figsize=(12,5))
