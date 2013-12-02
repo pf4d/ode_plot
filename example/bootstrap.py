@@ -69,13 +69,10 @@ def bootNLM(t, u, params, f, B, dt):
   np  = len(params)
   u0  = params[0]
   p0  = params[1:]
-  print u0, p0
 
   uhat = integrate(params, f, t, dt)
   
   Ax_min = tile(params, (np, 1))
-  us     = array([])
-  Fhat   = array([])
   for i in range(np):
     Ax_min[i,i] = Ax_min[i,i] + dt
     p0_new      = Ax_min[i,:]
@@ -106,19 +103,19 @@ def bootNLM(t, u, params, f, B, dt):
   residmat = reshape(residmat, (B,n))
 
   bsamp    = uhatmat + residmat
-  bootest  = array([]) 
   for i in range(B):
     btdat = t
     budat = bsamp[i,:]
 
     ftn = lambda p: bootOptimize(p, f, btdat, budat, dt) 
     bootnew = fmin(func=ftn, x0=params)
-    bootest = append(bootest, bootnew)
+    if i == 0:
+      bootest = bootnew
+    else:
+      bootest = vstack((bootest, bootnew))
     print 'Bootstrap iteration %i' % i
   
   return bootest, sedelt
-  
-
 
 
 # data:
@@ -135,18 +132,14 @@ tf  = t[-1]
 dt  = 0.25
 pdt = 0.001
 ta  = arange(t0, tf, pdt)
-B   = 2
 
-
-# ================================================================ #
-# Fits the ODE to the data using the simplex method with objective #
-# function "bootoptimize" (usually least squares), starting values #
-# "startvals" and data in "y,x" to fit the data to the model       #
-# ================================================================ #
+# Fits the ODE to the data :
 ftn  = lambda p: bootOptimize(p, f, t, u, dt)
 phat = fmin(func=ftn, x0=p0)
 uhat = integrate(phat, f, ta, pdt)
 
+# perform bootstrap method 2 :
+B = 5000
 betaBoot, seDelta = bootNLM(t, u, phat, f, B, dt)
 
 fig = figure()
@@ -155,44 +148,41 @@ plot(ta, uhat, 'k-', lw=2.0)
 grid()
 xlabel(r'$t$')
 ylabel(r'concentration')
+tight_layout()
 show()
 
-##Plot the solution:
-#fig = figure(figsize=(12,5))
-#ax1 = fig.add_subplot(121)
-#ax1.plot(ta, sol[0], '-', lw=2.0, label=r'$S$')
-#ax1.plot(ta, sol[1], '-', lw=2.0, label=r'$I$')
-#ax1.plot(ta, sol[2], '-', lw=2.0, label=r'$R$')
-#
-#ax1.set_xlabel(r'$S,I$')
-#ax1.set_ylabel(r'$f(S),f(I)$')
-#ax1.set_title('Solution')
-#leg = ax1.legend(loc='upper right')
-#leg.get_frame().set_alpha(0.5)
-#ax1.grid()
-#
-#
-## Plot the results
-#ax2 = fig.add_subplot(122)
-#xmin = sol[0].min()
-#xmax = sol[0].max()
-#ymin = sol[1].min()
-#ymax = sol[1].max()
-#zmin = sol[2].min()
-#zmax = sol[2].max()
-#ax2.set_xlim([xmin, xmax])
-#ax2.set_ylim([ymin, ymax])
-#
-#dirField_2(dSdt, dIdt, ax2, S_params, I_params)
-#ax2.plot(sol[0], sol[1])
-#
-#ax2.set_title(r'$(S,I)$ phase plane')
-#ax2.set_xlabel(r'$S$')
-#ax2.set_ylabel(r'$I$')
-#tight_layout()
-#savefig('prb4b.png', dpi=300)
-#show()
+bm    = mean(betaBoot, axis=0)
+bias  = bm - phat
+bse   = std(betaBoot, axis=0)
+p     = len(phat)
+nbins = max(10, round(B/50.0))
 
+fig = figure(figsize=(12,5))
+tit = [r'$u_0$', r'$\theta_1$', r'$\theta_2$']
+for i in range(p):
+  ax = fig.add_subplot(131 + i)
+  ax.hist(betaBoot[:,i], nbins)
+  ax.set_xlabel('Bootstrap Estimates')
+  ax.set_ylabel('Frequency')
+  ax.set_title('Bootstrap ' + tit[i] + 'Estimates')
+  ax.grid()
+tight_layout()
+show()
+
+sbeta = betaBoot.copy()
+for i in range(p):
+  sbeta[:,i] = sort(sbeta[:,i])
+
+alpha = 0.05
+cilow = sbeta[round(alpha*(B-1)/2.0), :]
+cihi  = sbeta[round(B-alpha*(B-1)/2.0 - 1), :]
+
+out   = {'true'  : phat,
+         'mean'  : bm,
+         'se'    : bse,
+         'bias'  : bias,
+         'cilow' : cilow,
+         'cihi'  : cihi}
 
 
 
