@@ -1,8 +1,5 @@
-import sys
-sys.path.append('../')
-
 from scipy.integrate._ode    import ode
-from src.ode                 import dirField, dirField_2, Euler
+from scipy.io                import savemat
 from pylab                   import *
 from mpl_toolkits.mplot3d    import Axes3D
 from multiprocessing         import Queue, cpu_count, Process
@@ -168,17 +165,17 @@ def plot_sol(ax, f, extent, tit, cmap='Greys'):
   """
   plot the 2D solution <f> to axes <ax>.
   """
-  im      = ax.imshow(f, extent=extent, cmap=cmap)
+  im      = ax.imshow(f[::-1,:], extent=extent, cmap=cmap)
   divider = make_axes_locatable(ax)
   cax     = divider.append_axes("right", size="5%", pad=0.05)
   ax.set_title(tit)
-  ax.set_xlabel(r'$\beta$')
-  ax.set_ylabel(r'$F$')
+  ax.set_ylabel(r'$\beta$')
+  ax.set_xlabel(r'$F$')
   colorbar(im, cax=cax)
 
 # parameters :
-m  = 100     # number of beta discretizations.
-n  = 100     # number of F discretizations.
+m  = 250     # number of beta discretizations.
+n  = 250     # number of F discretizations.
 p  = 3       # number of parameters
 t0 = 0.0     # initial time
 tf = 40000   # final time
@@ -189,7 +186,7 @@ y0 = [0.3, 0.3, 0.001]
 
 # range of beta, flow, and time to model :
 betaMin = 0.0
-betaMax = 0.5
+betaMax = 1.0
 Fmin    = 0.0
 Fmax    = 0.5
 
@@ -232,6 +229,8 @@ for i, s in enumerate(sols):
     S_sol = hstack((S_sol, s[1]))
     C_sol = hstack((C_sol, s[2]))
 
+Beta, Flow = meshgrid(beta_a, F_a)
+
 data = {'Beta'  : Beta,
         'Flow'  : Flow,
         'L_sol' : L_sol,
@@ -243,12 +242,10 @@ savemat('../../killer_yeast/data/results.mat', data)
 fig = plt.figure()
 ax  = fig.add_subplot(111, projection='3d')
 
-Beta, Flow = meshgrid(beta_a, F_a)
-
 ax.plot_wireframe(Beta, Flow, L_sol, color='r', lw=2.0, rstride=5, cstride=5)
 ax.plot_wireframe(Beta, Flow, S_sol, color='k', lw=2.0, rstride=5, cstride=5)
-ax.set_xlabel(r'$\beta$')
-ax.set_ylabel(r'$F$')
+ax.set_ylabel(r'$\beta$')
+ax.set_xlabel(r'$F$')
 show()
 
 
@@ -262,7 +259,7 @@ plot_sol(ax1, L_sol, extent, r'Killer',    cmap='Greys')
 plot_sol(ax2, S_sol, extent, r'Sensitive', cmap='Greys')
 plot_sol(ax3, C_sol, extent, r'Nutrient',  cmap='Greys')
 tight_layout()
-savefig('sols.png', dpi=300)
+savefig('../../killer_yeast/doc/images/sols.png', dpi=300)
 show()
 
 
