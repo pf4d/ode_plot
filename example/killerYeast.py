@@ -174,8 +174,8 @@ def plot_sol(ax, f, extent, tit, cmap='Greys'):
   colorbar(im, cax=cax)
 
 # parameters :
-m  = 250     # number of beta discretizations.
-n  = 250     # number of F discretizations.
+m  = 100     # number of beta discretizations.
+n  = 100     # number of F discretizations.
 p  = 3       # number of parameters
 t0 = 0.0     # initial time
 tf = 40000   # final time
@@ -186,7 +186,7 @@ y0 = [0.3, 0.3, 0.001]
 
 # range of beta, flow, and time to model :
 betaMin = 0.0
-betaMax = 1.0
+betaMax = 0.5
 Fmin    = 0.0
 Fmax    = 0.5
 
@@ -229,7 +229,8 @@ for i, s in enumerate(sols):
     S_sol = hstack((S_sol, s[1]))
     C_sol = hstack((C_sol, s[2]))
 
-Beta, Flow = meshgrid(beta_a, F_a)
+
+Flow, Beta = meshgrid(F_a, beta_a)
 
 data = {'Beta'  : Beta,
         'Flow'  : Flow,
@@ -242,8 +243,8 @@ savemat('../../killer_yeast/data/results.mat', data)
 fig = plt.figure()
 ax  = fig.add_subplot(111, projection='3d')
 
-ax.plot_wireframe(Beta, Flow, L_sol, color='r', lw=2.0, rstride=5, cstride=5)
-ax.plot_wireframe(Beta, Flow, S_sol, color='k', lw=2.0, rstride=5, cstride=5)
+ax.plot_wireframe(Flow, Beta, L_sol, color='r', lw=2.0, rstride=5, cstride=5)
+ax.plot_wireframe(Flow, Beta, S_sol, color='k', lw=2.0, rstride=5, cstride=5)
 ax.set_ylabel(r'$\beta$')
 ax.set_xlabel(r'$F$')
 show()
@@ -254,7 +255,7 @@ ax1 = fig.add_subplot(131)
 ax2 = fig.add_subplot(132)
 ax3 = fig.add_subplot(133)
 
-extent = [betaMin, betaMax, Fmin, Fmax]
+extent = [Fmin, Fmax, betaMin, betaMax]
 plot_sol(ax1, L_sol, extent, r'Killer',    cmap='Greys')
 plot_sol(ax2, S_sol, extent, r'Sensitive', cmap='Greys')
 plot_sol(ax3, C_sol, extent, r'Nutrient',  cmap='Greys')
