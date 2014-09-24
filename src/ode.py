@@ -18,7 +18,7 @@ from pylab import *
 from scipy.integrate._ode import IntegratorBase
 from numpy import array, isfinite
 
-mpl.rcParams['font.family'] = 'serif'
+mpl.rcParams['font.family']     = 'serif'
 mpl.rcParams['legend.fontsize'] = 'medium'
 
 class Euler(IntegratorBase):
