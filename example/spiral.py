@@ -80,7 +80,7 @@ legend(loc='lower right')
 xlabel(r'$x_1$')
 ylabel(r'$x_2$')
 title(r"Phase Plane")
-savefig('image.png', dpi=150)
+#savefig('image.png', dpi=150)
 show()
 
 

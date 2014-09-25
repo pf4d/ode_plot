@@ -81,24 +81,22 @@ def dirField_2(f1, f2, ax, f1_params=None, f2_params=None):
   
   #=============================================================================
   # differential function :
-  f1  = f1(x, y, f1_params)
-  f2  = f2(x, y, f2_params)
-  f   = f2/f1
-
-  v  = sqrt((r**2) / (1 + 1/f**2))        # length of arrow in y-dir
-  u  = v/f                                # length of arrow in x-dir
+  u   = f1(x, y, f1_params)
+  v   = f2(x, y, f2_params)
   
+  Unorm = sqrt(u**2 + v**2)
+  u /= Unorm
+  v /= Unorm
+
   #=============================================================================
   # plotting :
   gray = '#5f5f5f'                           # color for axes
   ax.axhline(lw=1, c=gray)                   # x-axis
   ax.axvline(lw=1, c=gray)                   # y-axis
   ax.quiver(x, y, u, v, pivot='middle',
-                        scale=None,
-                        angles='xy',
-                        headwidth=0.0, 
-                        headlength=0.0, 
-                        headaxislength=0.0)  # plot the dir. field
+                        headwidth=3.5, 
+                        headlength=2.0, 
+                        headaxislength=2.0)  # plot the dir. field
   ylim([ymin, ymax])                      # plotting y-axis limits
   xlim([xmin, xmax])                      # plotting x-axis limits
 
