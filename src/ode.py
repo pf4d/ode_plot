@@ -14,9 +14,11 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from pylab import *
+from pylab                import *
 from scipy.integrate._ode import IntegratorBase
-from numpy import array, isfinite
+from numpy                import array, isfinite
+from matplotlib           import colors
+from matplotlib.ticker    import LogFormatter
 
 mpl.rcParams['font.family']     = 'serif'
 mpl.rcParams['legend.fontsize'] = 'medium'
@@ -57,17 +59,20 @@ if Euler.runner:
     IntegratorBase.integrator_classes.append(Euler)
 
 
-def dirField_2(f1, f2, ax, f1_params=None, f2_params=None):
+def dirField_2(dxdt, dydt, fig, ax, nx=30, norm_bkg=False, Umin=0.05,
+               cmap='jet', scale='lin', x_params=None, y_params=None):
   """
   Plot the direction field of dx2/dx1 = f2/f1 on an axes object ax.
   """
+  cmap=get_cmap(cmap)
+
   xmin = ax.get_xlim()[0]
   xmax = ax.get_xlim()[1]
   ymin = ax.get_ylim()[0]
   ymax = ax.get_ylim()[1]
 
-  xstep  = (xmax - xmin)/30.
-  ystep  = (ymax - ymin)/30.
+  xstep  = (xmax - xmin)/float(nx)
+  ystep  = (ymax - ymin)/float(nx)
   
   # coordinate initialization :
   x1     = arange(xmin, xmax, xstep)
@@ -81,10 +86,10 @@ def dirField_2(f1, f2, ax, f1_params=None, f2_params=None):
   
   #=============================================================================
   # differential function :
-  u   = f1(x, y, f1_params)
-  v   = f2(x, y, f2_params)
+  u   = dxdt(x, y, x_params) + 1e-16
+  v   = dydt(x, y, y_params) + 1e-16
   
-  Unorm = sqrt(u**2 + v**2)
+  Unorm = sqrt(u**2 + v**2) + 1e-16
   u /= Unorm
   v /= Unorm
 
@@ -93,12 +98,33 @@ def dirField_2(f1, f2, ax, f1_params=None, f2_params=None):
   gray = '#5f5f5f'                           # color for axes
   ax.axhline(lw=1, c=gray)                   # x-axis
   ax.axvline(lw=1, c=gray)                   # y-axis
-  ax.quiver(x, y, u, v, pivot='middle',
-                        headwidth=3.5, 
-                        headlength=2.0, 
-                        headaxislength=2.0)  # plot the dir. field
-  ylim([ymin, ymax])                      # plotting y-axis limits
-  xlim([xmin, xmax])                      # plotting x-axis limits
+ 
+  if scale == 'log':
+    norm = colors.LogNorm()
+    Unorm[Unorm < Umin] = Umin
+  else:
+    norm = None
+  
+  if norm_bkg:
+    axn = ax.imshow(Unorm, aspect='auto', 
+                           cmap=cmap,
+                           extent=(xmin,xmax,ymin,ymax),
+                           norm=norm)
+    axq = ax.quiver(x, y, u, v, pivot='middle',
+                                cmap=cmap,
+                                headwidth=3.5, 
+                                headlength=2.0, 
+                                headaxislength=2.0)  # plot the dir. field
+  else:
+    c   = Unorm
+    axn = ax.quiver(x, y, u, v, c, pivot='middle',
+                                   cmap=cmap,
+                                   norm=norm,
+                                   headwidth=3.5, 
+                                   headlength=2.0, 
+                                   headaxislength=2.0)  # plot the dir. field
+  fig.colorbar(axn)
+
 
 def dirField(f, ax):
   """
