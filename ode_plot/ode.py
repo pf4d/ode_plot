@@ -66,6 +66,8 @@ def dirField_2(dxdt, dydt, fig, ax, nx=30, norm_bkg=False, Umin=0.05,
   """
   cmap=get_cmap(cmap)
 
+  print ax
+
   xmin = ax.get_xlim()[0]
   xmax = ax.get_xlim()[1]
   ymin = ax.get_ylim()[0]

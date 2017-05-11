@@ -1,8 +1,5 @@
-import sys
-sys.path.append('../')
-
 from scipy.integrate._ode import ode
-from src.ode import dirField, dirField_2, Euler
+from ode_plot import dirField, dirField_2, Euler
 from pylab import *
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -162,7 +159,7 @@ def dIdt(S, I, params):
   dIdt  = alpha*I*S - beta*I
   return array(dIdt)
 
-dirField_2(dSdt, dIdt, ax2, S_params, I_params)
+dirField_2(dSdt, dIdt, fig, ax2, x_params=S_params, y_params=I_params)
 ax2.plot(sol[0], sol[1])
 
 ax2.set_title(r'$(S,I)$ phase plane')
