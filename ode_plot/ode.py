@@ -152,10 +152,10 @@ def dirField(f, ax):
   
   #=============================================================================
   # differential function :
-  f  = f(x, y)
+  f  = f(x, y) + 1e-16
   
-  v  = sqrt((r**2) / (1 + 1/f**2))        # length of arrow in y-dir
-  u  = v/f                                # length of arrow in x-dir
+  v  = sqrt((r**2) / (1 + 1/f**2))           # length of arrow in y-dir
+  u  = v/f                                   # length of arrow in x-dir
   
   #=============================================================================
   # plotting :

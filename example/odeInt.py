@@ -1,8 +1,5 @@
-import sys
-sys.path.append('../')
-
 from scipy.integrate._ode import *
-from src.ode import dirField, Euler
+from ode_plot import dirField, Euler
 from pylab import *
 
 def func(t, y, *fparams):
